@@ -13,6 +13,21 @@
 }
 
 .table th {
+  .wrap {
+  overflow-x: auto;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e8e8e0;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  min-width: 640px;
+}
+
+.table th {
   text-align: left;
   padding: 9px 10px;
   font-weight: 500;
@@ -23,14 +38,14 @@
   background: #fafafa;
 }
 
-td {
+.table td {
   padding: 9px 10px;
   border-bottom: 1px solid #f0f0e8;
   vertical-align: top;
 }
 
 .table tr:last-child td { border-bottom: none; }
-tr:hover td { background: #f9faf9; }
+.table tr:hover td { background: #f9faf9; }
 
 .bold { font-weight: 500; }
 .muted { color: #888; }
