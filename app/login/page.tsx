@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import styles from './login.module.css'
