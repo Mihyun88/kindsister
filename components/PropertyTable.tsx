@@ -14,25 +14,14 @@ const typeClass: Record<string, string> = {
 
 function PhoneLink({ value }: { value: string }) {
   if (!value || value === '-') return <span className={styles.muted}>-</span>
-  const phoneRegex = /0\d{1,2}[-\s]?\d{3,4}[-\s]?\d{4}/g
-  const parts = value.split(phoneRegex)
-  const matches = value.match(phoneRegex) || []
+  const clean = value.replace(/\s/g, '')
+  const match = clean.match(/010\d{8}|010-\d{4}-\d{4}/)
+  if (!match) return <span className={styles.muted}>{value}</span>
+  const num = match[0].replace(/-/g, '')
   return (
-    <span>
-      {parts.map((part, i) => (
-        <span key={i}>
-          <span className={styles.muted}>{part}</span>
-          {matches[i] && (
-            <a
-              href={`tel:${matches[i].replace(/[-\s]/g, '')}`}
-              style={{color:'#1D9E75', textDecoration:'underline', fontWeight:500}}
-            >
-              {matches[i]}
-            </a>
-          )}
-        </span>
-      ))}
-    </span>
+    <a href={`tel:${num}`} style={{color:'#1D9E75',textDecoration:'none',fontWeight:500}}>
+      {value}
+    </a>
   )
 }
 
