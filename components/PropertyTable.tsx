@@ -14,16 +14,24 @@ const typeClass: Record<string, string> = {
 
 function PhoneLink({ value }: { value: string }) {
   if (!value || value === '-') return <span className={styles.muted}>-</span>
-  const phones = value.match(/010[-\s]?\d{4}[-\s]?\d{4}/g)
-  if (!phones) return <span className={styles.muted}>{value}</span>
-  const parts = value.split(/(010[-\s]?\d{4}[-\s]?\d{4})/g)
+  const phoneRegex = /0\d{1,2}[-\s]?\d{3,4}[-\s]?\d{4}/g
+  const parts = value.split(phoneRegex)
+  const matches = value.match(phoneRegex) || []
   return (
     <span>
-      {parts.map((part, i) =>
-        /010[-\s]?\d{4}[-\s]?\d{4}/.test(part)
-          ? <a key={i} href={`tel:${part.replace(/[-\s]/g, '')}`} style={{color:'#1D9E75', textDecoration:'none', fontWeight:500}}>{part}</a>
-          : <span key={i} className={styles.muted}>{part}</span>
-      )}
+      {parts.map((part, i) => (
+        <span key={i}>
+          <span className={styles.muted}>{part}</span>
+          {matches[i] && (
+            <a
+              href={`tel:${matches[i].replace(/[-\s]/g, '')}`}
+              style={{color:'#1D9E75', textDecoration:'underline', fontWeight:500}}
+            >
+              {matches[i]}
+            </a>
+          )}
+        </span>
+      ))}
     </span>
   )
 }
