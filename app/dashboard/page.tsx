@@ -1,8 +1,8 @@
 'use client'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import PropertyTable from '@/components/PropertyTable'
-import PropertyModal from '@/components/PropertyModal'
-import styles from './dashboard.module.css'
 import PropertyModal from '@/components/PropertyModal'
 import styles from './dashboard.module.css'
 
@@ -14,6 +14,23 @@ const TABS = [
   { key: 'sangga_building', label: '상가·건물매매' },
 ]
 
+const OFFICETEL_NAMES = [
+  '신촌아리움','아리움2차','아리움4','아리움5','아리움6','아리움1','아리움3',
+  '캠퍼빌','리브하임1차','리브하임2차','신촌스타게이트','신촌가이아','슈테1',
+  '경우타운','SM더포레1차','SM더포레2','더가온','한빛슈테리움2','투웨니퍼스트',
+  '오늘아침','송스8','더펜타','그린우드빌','영타운','프리젠1','프리젠2',
+  '맨션90','다올1차','다올2차','애스턴빌','UCU','MJ더퍼스트','포레스트',
+  '스타게이트2차','파라타워','화영빌딩','신촌자이엘라','포스빌','신촌다올',
+  '지앤피나인','에스빌딩','비손','서희스타힐스','이대역푸르지오시티',
+  '신촌푸르지오시티','엔트라리움2차','YES APM','이화스테이','마에스트로',
+  '인비따레','파크제이드','파크준','자이엘라','신푸','이푸',
+  '이대역스타게이트','스타게이트'
+]
+
+function isOfficetel(name: string) {
+  return OFFICETEL_NAMES.some(o => name.includes(o))
+}
+
 export default function Dashboard() {
   const router = useRouter()
   const [user, setUser] = useState<any>(null)
@@ -22,6 +39,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('')
+  const [buildingFilter, setBuildingFilter] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [editItem, setEditItem] = useState<any>(null)
 
@@ -40,6 +58,7 @@ export default function Dashboard() {
     setLoading(true)
     setSearch('')
     setFilter('')
+    setBuildingFilter('')
     const { data, error } = await supabase
       .from('properties')
       .select('*')
@@ -61,108 +80,4 @@ export default function Dashboard() {
       await supabase.from('properties').insert({ ...item, category: tab, created_by: user.email })
     }
     setModalOpen(false)
-    setEditItem(null)
-    fetchProperties()
-  }
-
-  const handleDelete = async (id: string) => {
-    if (!confirm('이 매물을 삭제할까요?')) return
-    await supabase.from('properties').delete().eq('id', id)
-    fetchProperties()
-  }
-
-  const handleEdit = (item: any) => {
-    setEditItem(item)
-    setModalOpen(true)
-  }
-
-  const filtered = properties.filter(p => {
-    const str = Object.values(p).join(' ').toLowerCase()
-    const matchQ = !search || str.includes(search.toLowerCase())
-    const matchF = !filter || p.prop_type === filter
-    return matchQ && matchF
-  })
-
-  const stats = {
-    total: properties.length,
-    월세: properties.filter(p => p.prop_type === '월세').length,
-    반전세: properties.filter(p => p.prop_type === '반전세').length,
-    전세: properties.filter(p => p.prop_type === '전세').length,
-    공실: properties.filter(p => p.move_date?.includes('공실')).length,
-  }
-
-  return (
-    <div className={styles.wrap}>
-      <header className={styles.header}>
-        <div className={styles.logo}>착한언니복덕방<span> 매물 관리</span></div>
-        <div className={styles.userbar}>
-          <span className={styles.email}>{user?.email}</span>
-          <button className="btn sm" onClick={handleLogout}>로그아웃</button>
-        </div>
-      </header>
-
-      <div className={styles.tabs}>
-        {TABS.map(t => (
-          <button
-            key={t.key}
-            className={`${styles.tab} ${tab === t.key ? styles.active : ''}`}
-            onClick={() => setTab(t.key)}
-          >{t.label}</button>
-        ))}
-      </div>
-
-      <main className={styles.main}>
-        {tab === 'jeonwolse' && (
-          <div className={styles.stats}>
-            <div className={styles.stat}><div className={styles.slabel}>전체</div><div className={styles.sval}>{stats.total}</div></div>
-            <div className={styles.stat}><div className={styles.slabel}>월세</div><div className={styles.sval}>{stats.월세}</div></div>
-            <div className={styles.stat}><div className={styles.slabel}>반전세</div><div className={styles.sval}>{stats.반전세}</div></div>
-            <div className={styles.stat}><div className={styles.slabel}>전세</div><div className={styles.sval}>{stats.전세}</div></div>
-          </div>
-        )}
-        {tab === 'sangga' && (
-          <div className={styles.stats}>
-            <div className={styles.stat}><div className={styles.slabel}>전체</div><div className={styles.sval}>{stats.total}</div></div>
-            <div className={styles.stat}><div className={styles.slabel}>공실</div><div className={styles.sval}>{stats.공실}</div></div>
-            <div className={styles.stat} /><div className={styles.stat} />
-          </div>
-        )}
-
-        <div className={styles.topbar}>
-          <input
-            className={styles.search}
-            placeholder="건물명, 호수, 특징 검색..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
-          {tab === 'jeonwolse' && (
-            <select className={styles.filter} value={filter} onChange={e => setFilter(e.target.value)}>
-              <option value="">전체</option>
-              <option>월세</option><option>반전세</option><option>전세</option>
-            </select>
-          )}
-          <button className="btn primary" onClick={() => { setEditItem(null); setModalOpen(true) }}>+ 매물 추가</button>
-        </div>
-
-        {loading
-          ? <p className={styles.empty}>불러오는 중...</p>
-          : <PropertyTable
-              items={filtered}
-              category={tab}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-            />
-        }
-      </main>
-
-      {modalOpen && (
-        <PropertyModal
-          category={tab}
-          item={editItem}
-          onSave={handleSave}
-          onClose={() => { setModalOpen(false); setEditItem(null) }}
-        />
-      )}
-    </div>
-  )
-}
+    setEdit
