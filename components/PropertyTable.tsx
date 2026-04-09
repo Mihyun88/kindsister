@@ -12,6 +12,22 @@ const typeClass: Record<string, string> = {
   '월세': 'rent', '반전세': 'half', '전세': 'sale', '매매': 'shop'
 }
 
+function PhoneLink({ value }: { value: string }) {
+  if (!value || value === '-') return <span className={styles.muted}>-</span>
+  const phones = value.match(/010[-\s]?\d{4}[-\s]?\d{4}/g)
+  if (!phones) return <span className={styles.muted}>{value}</span>
+  const parts = value.split(/(010[-\s]?\d{4}[-\s]?\d{4})/g)
+  return (
+    <span>
+      {parts.map((part, i) =>
+        /010[-\s]?\d{4}[-\s]?\d{4}/.test(part)
+          ? <a key={i} href={`tel:${part.replace(/[-\s]/g, '')}`} style={{color:'#1D9E75', textDecoration:'none', fontWeight:500}}>{part}</a>
+          : <span key={i} className={styles.muted}>{part}</span>
+      )}
+    </span>
+  )
+}
+
 export default function PropertyTable({ items, category, onEdit, onDelete }: Props) {
   if (!items.length) {
     return <div className={styles.empty}>매물이 없습니다. 추가해 주세요.</div>
@@ -62,8 +78,8 @@ export default function PropertyTable({ items, category, onEdit, onDelete }: Pro
                 </>
               )}
               <td className={styles.note} title={item.notes}>{item.notes || '-'}</td>
-              <td className={styles.muted}>{item.tenant_contact || '-'}</td>
-              <td className={styles.muted}>{item.owner_contact || '-'}</td>
+              <td><PhoneLink value={item.tenant_contact} /></td>
+              <td><PhoneLink value={item.owner_contact} /></td>
               <td className={styles.muted}>{item.created_by?.split('@')[0]}</td>
               <td className={styles.actions}>
                 <button className="btn sm" onClick={() => onEdit(item)}>수정</button>
