@@ -1,8 +1,8 @@
 'use client'
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import PropertyTable from '@/components/PropertyTable'
+import PropertyModal from '@/components/PropertyModal'
+import styles from './dashboard.module.css'
 import PropertyModal from '@/components/PropertyModal'
 import styles from './dashboard.module.css'
 
