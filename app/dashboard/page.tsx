@@ -7,6 +7,7 @@ const TABS = [
   { key: 'jeonwolse', label: '전월세' },
   { key: 'maemae_oneroom', label: '매매 (원룸)' },
   { key: 'maemae_duplex', label: '매매 (복층·투룸)' },
+  { key: 'apt', label: '아파트' },
   { key: 'sangga', label: '상가' },
   { key: 'sangga_building', label: '상가·건물매매' },
 ]
