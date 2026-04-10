@@ -91,8 +91,8 @@ export default function Dashboard() {
     return matchQ && matchF && matchB
   })
 
-  const isSangga = tab === 'sangga' || tab === 'sangga_building'
-  const isJeonwolse = tab === 'jeonwolse'
+const isSangga = tab === 'sangga' || tab === 'sangga_building'
+const isJeonwolse = tab === 'jeonwolse' || tab === 'apt'
 
   const stats = {
     total: properties.length,
