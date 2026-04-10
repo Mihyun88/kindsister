@@ -1,3 +1,10 @@
+네 가능해요! 컬럼 헤더 클릭하면 오름차/내림차순으로 정렬되게 만들게요 😊
+
+**https://github.com/Mihyun88/kindsister/edit/main/app/dashboard/page.tsx**
+
+열어서 **Ctrl+A → Delete → 아래 내용 붙여넣기 → Commit!** 👇
+
+```tsx
 'use client'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -24,6 +31,9 @@ function PhoneLink({ value }: { value: string }) {
   return <a href={`tel:${num}`} style={{color:'#1D9E75',textDecoration:'none',fontWeight:500}}>{value}</a>
 }
 
+type SortKey = 'building_name' | 'move_date' | 'price' | 'room_number' | ''
+type SortDir = 'asc' | 'desc'
+
 export default function Dashboard() {
   const router = useRouter()
   const [user, setUser] = useState<any>(null)
@@ -33,6 +43,8 @@ export default function Dashboard() {
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('')
   const [buildingFilter, setBuildingFilter] = useState('')
+  const [sortKey, setSortKey] = useState<SortKey>('')
+  const [sortDir, setSortDir] = useState<SortDir>('asc')
   const [modalOpen, setModalOpen] = useState(false)
   const [editItem, setEditItem] = useState<any>(null)
   const [form, setForm] = useState<any>({})
@@ -48,7 +60,7 @@ export default function Dashboard() {
 
   const fetchProperties = async () => {
     setLoading(true)
-    setSearch(''); setFilter(''); setBuildingFilter('')
+    setSearch(''); setFilter(''); setBuildingFilter(''); setSortKey(''); setSortDir('asc')
     const { data } = await supabase.from('properties').select('*').eq('category', tab).order('created_at', { ascending: false })
     setProperties(data || [])
     setLoading(false)
@@ -75,15 +87,27 @@ export default function Dashboard() {
   const openAdd = () => { setEditItem(null); setForm({ prop_type: '월세' }); setModalOpen(true) }
   const openEdit = (item: any) => { setEditItem(item); setForm(item); setModalOpen(true) }
 
-  const filtered = properties.filter(p => {
-    const str = Object.values(p).join(' ').toLowerCase()
-    const matchQ = !search || str.includes(search.toLowerCase())
-    const matchF = !filter || p.prop_type === filter
-    const matchB = !buildingFilter ||
-      (buildingFilter === '오피스텔' && isOfficetel(p.building_name)) ||
-      (buildingFilter === '원룸' && !isOfficetel(p.building_name))
-    return matchQ && matchF && matchB
-  })
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortKey(key); setSortDir('asc') }
+  }
+
+  const filtered = properties
+    .filter(p => {
+      const str = Object.values(p).join(' ').toLowerCase()
+      const matchQ = !search || str.includes(search.toLowerCase())
+      const matchF = !filter || p.prop_type === filter
+      const matchB = !buildingFilter ||
+        (buildingFilter === '오피스텔' && isOfficetel(p.building_name)) ||
+        (buildingFilter === '원룸' && !isOfficetel(p.building_name))
+      return matchQ && matchF && matchB
+    })
+    .sort((a, b) => {
+      if (!sortKey) return 0
+      const va = (a[sortKey] || '').toString()
+      const vb = (b[sortKey] || '').toString()
+      return sortDir === 'asc' ? va.localeCompare(vb, 'ko') : vb.localeCompare(va, 'ko')
+    })
 
   const isSangga = tab === 'sangga' || tab === 'sangga_building'
   const isJeonwolse = tab === 'jeonwolse'
@@ -100,10 +124,17 @@ export default function Dashboard() {
   }
 
   const statCard = (label: string, value: number, onClick: () => void, active: boolean) => (
-    <div onClick={onClick} style={{background:'white',borderRadius:'10px',border:active?'2px solid #1D9E75':'1px solid #e8e8e0',padding:'12px 14px',cursor:'pointer',transition:'all 0.15s'}}>
+    <div onClick={onClick} style={{background:'white',borderRadius:'10px',border:active?'2px solid #1D9E75':'1px solid #e8e8e0',padding:'12px 14px',cursor:'pointer'}}>
       <div style={{fontSize:'11px',color:'#888',marginBottom:'3px'}}>{label}</div>
       <div style={{fontSize:'22px',fontWeight:'600',color:active?'#1D9E75':'#1a1a1a'}}>{value}</div>
     </div>
+  )
+
+  const thStyle: any = {padding:'9px 10px',fontWeight:'500',borderBottom:'1px solid #e8e8e0',color:'#888',fontSize:'11px',textAlign:'left',whiteSpace:'nowrap'}
+  const sortTh = (label: string, key: SortKey) => (
+    <th style={{...thStyle,cursor:'pointer',userSelect:'none'}} onClick={() => handleSort(key)}>
+      {label} {sortKey===key ? (sortDir==='asc'?'↑':'↓') : '↕'}
+    </th>
   )
 
   return (
@@ -125,11 +156,10 @@ export default function Dashboard() {
       </div>
 
       <main style={{maxWidth:'1100px',margin:'0 auto',padding:'1.2rem 1rem'}}>
-
         {isJeonwolse && (
           <>
             <div style={{display:'grid',gridTemplateColumns:'repeat(4,minmax(0,1fr))',gap:'10px',marginBottom:'10px'}}>
-              {statCard('전체', stats.total, () => { setFilter(''); setBuildingFilter(''); setSearch('') }, !filter && !buildingFilter)}
+              {statCard('전체', stats.total, () => { setFilter(''); setBuildingFilter('') }, !filter && !buildingFilter)}
               {statCard('월세', stats.월세, () => { setFilter('월세'); setBuildingFilter('') }, filter==='월세' && !buildingFilter)}
               {statCard('반전세', stats.반전세, () => { setFilter('반전세'); setBuildingFilter('') }, filter==='반전세')}
               {statCard('전세', stats.전세, () => { setFilter('전세'); setBuildingFilter('') }, filter==='전세')}
@@ -144,7 +174,7 @@ export default function Dashboard() {
 
         {isApt && (
           <div style={{display:'grid',gridTemplateColumns:'repeat(4,minmax(0,1fr))',gap:'10px',marginBottom:'10px'}}>
-            {statCard('전체', stats.total, () => { setFilter(''); setSearch('') }, !filter)}
+            {statCard('전체', stats.total, () => setFilter(''), !filter)}
             {statCard('월세', stats.월세, () => setFilter('월세'), filter==='월세')}
             {statCard('반전세', stats.반전세, () => setFilter('반전세'), filter==='반전세')}
             {statCard('전세', stats.전세, () => setFilter('전세'), filter==='전세')}
@@ -175,11 +205,17 @@ export default function Dashboard() {
             <table style={{width:'100%',borderCollapse:'collapse',fontSize:'12px',minWidth:'640px'}}>
               <thead>
                 <tr style={{background:'#fafafa'}}>
-                  {isJeonwolse && <th style={{padding:'9px 10px',fontWeight:'500',borderBottom:'1px solid #e8e8e0',color:'#888',fontSize:'11px',textAlign:'left',whiteSpace:'nowrap'}}>구분</th>}
-                  {isApt && <th style={{padding:'9px 10px',fontWeight:'500',borderBottom:'1px solid #e8e8e0',color:'#888',fontSize:'11px',textAlign:'left',whiteSpace:'nowrap'}}>구분</th>}
-                  {['건물명','호수','금액','입주일',...(isSangga?['업종','관리비','권리금','평수']:[]),'특징','임차인 연락처','임대인 연락처','등록자',''].map((h,i) => (
-                    <th key={i} style={{padding:'9px 10px',fontWeight:'500',borderBottom:'1px solid #e8e8e0',color:'#888',fontSize:'11px',textAlign:'left',whiteSpace:'nowrap'}}>{h}</th>
-                  ))}
+                  {(isJeonwolse || isApt) && <th style={thStyle}>구분</th>}
+                  {sortTh('건물명', 'building_name')}
+                  {sortTh('호수', 'room_number')}
+                  {sortTh('금액', 'price')}
+                  {sortTh('입주일', 'move_date')}
+                  {isSangga && <><th style={thStyle}>업종</th><th style={thStyle}>관리비</th><th style={thStyle}>권리금</th><th style={thStyle}>평수</th></>}
+                  <th style={thStyle}>특징</th>
+                  <th style={thStyle}>임차인 연락처</th>
+                  <th style={thStyle}>임대인 연락처</th>
+                  <th style={thStyle}>등록자</th>
+                  <th style={thStyle}></th>
                 </tr>
               </thead>
               <tbody>
@@ -243,3 +279,6 @@ export default function Dashboard() {
     </div>
   )
 }
+```
+
+Commit 하면 **건물명 ↕, 호수 ↕, 금액 ↕, 입주일 ↕** 클릭할 때마다 오름차/내림차 정렬돼요! 😊
