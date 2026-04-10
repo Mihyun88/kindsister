@@ -74,6 +74,12 @@ export default function Dashboard() {
   const openAdd = () => { setEditItem(null); setForm({ prop_type: '월세' }); setModalOpen(true) }
   const openEdit = (item: any) => { setEditItem(item); setForm(item); setModalOpen(true) }
 
+  const handleStatClick = (type: string, building: string) => {
+    setFilter(type)
+    setBuildingFilter(building)
+    setSearch('')
+  }
+
   const filtered = properties.filter(p => {
     const str = Object.values(p).join(' ').toLowerCase()
     const matchQ = !search || str.includes(search.toLowerCase())
@@ -95,6 +101,13 @@ export default function Dashboard() {
     오피스텔: properties.filter(p => isOfficetel(p.building_name)).length,
     원룸: properties.filter(p => !isOfficetel(p.building_name)).length,
   }
+
+  const statCard = (label: string, value: number, onClick: () => void, active: boolean) => (
+    <div onClick={onClick} style={{background:'white',borderRadius:'10px',border: active ? '2px solid #1D9E75' : '1px solid #e8e8e0',padding:'12px 14px',cursor:'pointer',transition:'all 0.15s'}}>
+      <div style={{fontSize:'11px',color:'#888',marginBottom:'3px'}}>{label}</div>
+      <div style={{fontSize:'22px',fontWeight:'600',color: active ? '#1D9E75' : '#1a1a1a'}}>{value}</div>
+    </div>
+  )
 
   return (
     <div style={{minHeight:'100vh',background:'#f5f5f0'}}>
@@ -118,20 +131,14 @@ export default function Dashboard() {
         {isJeonwolse && (
           <>
             <div style={{display:'grid',gridTemplateColumns:'repeat(4,minmax(0,1fr))',gap:'10px',marginBottom:'10px'}}>
-              {[['전체',stats.total],['월세',stats.월세],['반전세',stats.반전세],['전세',stats.전세]].map(([l,v]) => (
-                <div key={l} style={{background:'white',borderRadius:'10px',border:'1px solid #e8e8e0',padding:'12px 14px'}}>
-                  <div style={{fontSize:'11px',color:'#888',marginBottom:'3px'}}>{l}</div>
-                  <div style={{fontSize:'22px',fontWeight:'600'}}>{v}</div>
-                </div>
-              ))}
+              {statCard('전체', stats.total, () => { setFilter(''); setBuildingFilter(''); setSearch('') }, !filter && !buildingFilter)}
+              {statCard('월세', stats.월세, () => handleStatClick('월세', ''), filter==='월세' && !buildingFilter)}
+              {statCard('반전세', stats.반전세, () => handleStatClick('반전세', ''), filter==='반전세')}
+              {statCard('전세', stats.전세, () => handleStatClick('전세', ''), filter==='전세')}
             </div>
             <div style={{display:'grid',gridTemplateColumns:'repeat(4,minmax(0,1fr))',gap:'10px',marginBottom:'10px'}}>
-              {[['오피스텔',stats.오피스텔],['원룸',stats.원룸]].map(([l,v]) => (
-                <div key={l} style={{background:'white',borderRadius:'10px',border:'1px solid #e8e8e0',padding:'12px 14px'}}>
-                  <div style={{fontSize:'11px',color:'#888',marginBottom:'3px'}}>{l}</div>
-                  <div style={{fontSize:'22px',fontWeight:'600'}}>{v}</div>
-                </div>
-              ))}
+              {statCard('오피스텔', stats.오피스텔, () => { setFilter(''); setBuildingFilter('오피스텔'); setSearch('') }, buildingFilter==='오피스텔')}
+              {statCard('원룸', stats.원룸, () => { setFilter(''); setBuildingFilter('원룸'); setSearch('') }, buildingFilter==='원룸')}
               <div/><div/>
             </div>
           </>
