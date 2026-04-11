@@ -45,12 +45,19 @@ export default function Dashboard() {
   const [editItem, setEditItem] = useState<any>(null)
   const [form, setForm] = useState<any>({})
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (!data.session) { router.push('/login'); return }
-      setUser(data.session.user)
-    })
-  }, [router])
+useEffect(() => {
+  supabase.auth.getSession().then(({ data }) => {
+    if (!data.session) { router.push('/login'); return }
+    setUser(data.session.user)
+  })
+
+  const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    if (!session) { router.push('/login'); return }
+    setUser(session.user)
+  })
+
+  return () => subscription.unsubscribe()
+}, [router])
 
   useEffect(() => { if (user) fetchProperties() }, [user, tab])
 
