@@ -1,10 +1,3 @@
-네 가능해요! 컬럼 헤더 클릭하면 오름차/내림차순으로 정렬되게 만들게요 😊
-
-**https://github.com/Mihyun88/kindsister/edit/main/app/dashboard/page.tsx**
-
-열어서 **Ctrl+A → Delete → 아래 내용 붙여넣기 → Commit!** 👇
-
-```tsx
 'use client'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -20,6 +13,8 @@ const TABS = [
 ]
 
 const OFFICETEL = ['신촌아리움','아리움2차','아리움4','아리움5','아리움6','아리움1','아리움3','캠퍼빌','리브하임1차','리브하임2차','신촌스타게이트','이대역스타게이트','스타게이트','신촌가이아','슈테1','경우타운','SM더포레1차','SM더포레2','더가온','한빛슈테리움2','투웨니퍼스트','오늘아침','송스8','더펜타','그린우드빌','영타운','프리젠1','프리젠2','맨션90','다올1차','다올2차','애스턴빌','UCU','MJ더퍼스트','포레스트','스타게이트2차','파라타워','화영빌딩','신촌자이엘라','자이엘라','포스빌','신촌다올','지앤피나인','에스빌딩','비손','서희스타힐스','이대역푸르지오시티','신촌푸르지오시티','신푸','이푸','엔트라리움2차','YES APM','이화스테이','마에스트로','인비따레','파크제이드','파크준','서희','가이아','이대다올2차','이대다올1차','핀란드','핀란드타워']
+
+const AREA_FILTERS = ['전체', '43m²', '59m²', '84m²', '112m²']
 
 const isOfficetel = (name: string) => OFFICETEL.some(o => name.includes(o))
 
@@ -43,6 +38,7 @@ export default function Dashboard() {
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('')
   const [buildingFilter, setBuildingFilter] = useState('')
+  const [areaFilter, setAreaFilter] = useState('')
   const [sortKey, setSortKey] = useState<SortKey>('')
   const [sortDir, setSortDir] = useState<SortDir>('asc')
   const [modalOpen, setModalOpen] = useState(false)
@@ -60,7 +56,7 @@ export default function Dashboard() {
 
   const fetchProperties = async () => {
     setLoading(true)
-    setSearch(''); setFilter(''); setBuildingFilter(''); setSortKey(''); setSortDir('asc')
+    setSearch(''); setFilter(''); setBuildingFilter(''); setAreaFilter(''); setSortKey(''); setSortDir('asc')
     const { data } = await supabase.from('properties').select('*').eq('category', tab).order('created_at', { ascending: false })
     setProperties(data || [])
     setLoading(false)
@@ -100,7 +96,8 @@ export default function Dashboard() {
       const matchB = !buildingFilter ||
         (buildingFilter === '오피스텔' && isOfficetel(p.building_name)) ||
         (buildingFilter === '원룸' && !isOfficetel(p.building_name))
-      return matchQ && matchF && matchB
+      const matchA = !areaFilter || (p.area && p.area.includes(areaFilter.replace('m²', '')))
+      return matchQ && matchF && matchB && matchA
     })
     .sort((a, b) => {
       if (!sortKey) return 0
@@ -173,12 +170,25 @@ export default function Dashboard() {
         )}
 
         {isApt && (
-          <div style={{display:'grid',gridTemplateColumns:'repeat(4,minmax(0,1fr))',gap:'10px',marginBottom:'10px'}}>
-            {statCard('전체', stats.total, () => setFilter(''), !filter)}
-            {statCard('월세', stats.월세, () => setFilter('월세'), filter==='월세')}
-            {statCard('반전세', stats.반전세, () => setFilter('반전세'), filter==='반전세')}
-            {statCard('전세', stats.전세, () => setFilter('전세'), filter==='전세')}
-          </div>
+          <>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(4,minmax(0,1fr))',gap:'10px',marginBottom:'10px'}}>
+              {statCard('전체', stats.total, () => setFilter(''), !filter)}
+              {statCard('월세', stats.월세, () => setFilter('월세'), filter==='월세')}
+              {statCard('반전세', stats.반전세, () => setFilter('반전세'), filter==='반전세')}
+              {statCard('전세', stats.전세, () => setFilter('전세'), filter==='전세')}
+            </div>
+            <div style={{display:'flex',gap:'6px',marginBottom:'10px',flexWrap:'wrap'}}>
+              {AREA_FILTERS.map(a => {
+                const val = a === '전체' ? '' : a
+                const isActive = areaFilter === val
+                return (
+                  <button key={a} onClick={() => setAreaFilter(val)} style={{padding:'6px 14px',borderRadius:'20px',border:isActive?'2px solid #1D9E75':'1px solid #e8e8e0',background:isActive?'#e8f7f2':'white',color:isActive?'#1D9E75':'#666',fontWeight:isActive?600:400,fontSize:'12px',cursor:'pointer',fontFamily:'inherit'}}>
+                    {a}
+                  </button>
+                )
+              })}
+            </div>
+          </>
         )}
 
         <div style={{display:'flex',gap:'8px',marginBottom:'1rem',flexWrap:'wrap',alignItems:'center'}}>
@@ -208,13 +218,13 @@ export default function Dashboard() {
                   {(isJeonwolse || isApt) && <th style={thStyle}>구분</th>}
                   {sortTh('건물명', 'building_name')}
                   {sortTh('호수', 'room_number')}
+                  {isApt && <th style={thStyle}>면적</th>}
                   {sortTh('금액', 'price')}
                   {sortTh('입주일', 'move_date')}
                   {isSangga && <><th style={thStyle}>업종</th><th style={thStyle}>관리비</th><th style={thStyle}>권리금</th><th style={thStyle}>평수</th></>}
                   <th style={thStyle}>특징</th>
                   <th style={thStyle}>임차인 연락처</th>
                   <th style={thStyle}>임대인 연락처</th>
-                  <th style={thStyle}>등록자</th>
                   <th style={thStyle}></th>
                 </tr>
               </thead>
@@ -226,13 +236,13 @@ export default function Dashboard() {
                     {(isJeonwolse || isApt) && <td style={{padding:'9px 10px'}}><span className={`badge ${item.prop_type==='월세'?'rent':item.prop_type==='반전세'?'half':item.prop_type==='매매'?'shop':'sale'}`}>{item.prop_type}</span></td>}
                     <td style={{padding:'9px 10px',fontWeight:'500'}}>{item.building_name}</td>
                     <td style={{padding:'9px 10px'}}>{item.room_number}</td>
+                    {isApt && <td style={{padding:'9px 10px',color:'#555'}}>{item.area ? `${item.area}m²` : '-'}</td>}
                     <td style={{padding:'9px 10px',color:'#1D9E75',fontWeight:'500'}}>{item.price}</td>
                     <td style={{padding:'9px 10px',color:'#888'}}>{item.move_date||'-'}</td>
                     {isSangga && <><td style={{padding:'9px 10px',color:'#888'}}>{item.biz_type||'-'}</td><td style={{padding:'9px 10px',color:'#888'}}>{item.mgmt_fee||'-'}</td><td style={{padding:'9px 10px',color:'#888'}}>{item.premium||'-'}</td><td style={{padding:'9px 10px'}}>{item.area||'-'}</td></>}
                     <td style={{padding:'9px 10px',color:'#888',maxWidth:'160px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}} title={item.notes}>{item.notes||'-'}</td>
                     <td style={{padding:'9px 10px'}}><PhoneLink value={item.tenant_contact} /></td>
                     <td style={{padding:'9px 10px'}}><PhoneLink value={item.owner_contact} /></td>
-                    <td style={{padding:'9px 10px',color:'#888'}}>{item.created_by?.split('@')[0]}</td>
                     <td style={{padding:'9px 10px',whiteSpace:'nowrap'}}>
                       <button className="btn sm" onClick={() => openEdit(item)} style={{marginRight:'4px'}}>수정</button>
                       <button className="btn sm danger" onClick={() => handleDelete(item.id)}>삭제</button>
@@ -253,6 +263,18 @@ export default function Dashboard() {
               {(isJeonwolse || isApt) && <div><label style={{display:'block',fontSize:'11px',color:'#666',marginBottom:'4px'}}>구분</label><select value={form.prop_type||'월세'} onChange={e => setForm({...form,prop_type:e.target.value})}><option>월세</option><option>반전세</option><option>전세</option>{isApt && <option>매매</option>}</select></div>}
               <div><label style={{display:'block',fontSize:'11px',color:'#666',marginBottom:'4px'}}>건물명 *</label><input autoComplete="off" value={form.building_name||''} onChange={e => setForm({...form,building_name:e.target.value})} placeholder="자이엘라" /></div>
               <div><label style={{display:'block',fontSize:'11px',color:'#666',marginBottom:'4px'}}>호수</label><input autoComplete="off" value={form.room_number||''} onChange={e => setForm({...form,room_number:e.target.value})} placeholder="507" /></div>
+              {isApt && (
+                <div>
+                  <label style={{display:'block',fontSize:'11px',color:'#666',marginBottom:'4px'}}>면적</label>
+                  <select value={form.area||''} onChange={e => setForm({...form,area:e.target.value})}>
+                    <option value="">선택</option>
+                    <option value="43">43m²</option>
+                    <option value="59">59m²</option>
+                    <option value="84">84m²</option>
+                    <option value="112">112m²</option>
+                  </select>
+                </div>
+              )}
               <div><label style={{display:'block',fontSize:'11px',color:'#666',marginBottom:'4px'}}>금액</label><input autoComplete="off" value={form.price||''} onChange={e => setForm({...form,price:e.target.value})} placeholder="1000/75" /></div>
               <div><label style={{display:'block',fontSize:'11px',color:'#666',marginBottom:'4px'}}>입주일</label><input autoComplete="off" value={form.move_date||''} onChange={e => setForm({...form,move_date:e.target.value})} placeholder="즉시입주" /></div>
             </div>
@@ -279,6 +301,3 @@ export default function Dashboard() {
     </div>
   )
 }
-```
-
-Commit 하면 **건물명 ↕, 호수 ↕, 금액 ↕, 입주일 ↕** 클릭할 때마다 오름차/내림차 정렬돼요! 😊
